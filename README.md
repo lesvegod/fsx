@@ -42,9 +42,8 @@ dotnet tool install -g lesvegod.fsx
 dotnet tool update -g lesvegod.fsx
 ```
 另可於 GitHub 下載最新版本的執行檔，並將其放置於系統 PATH 中的目錄下。
-* [免 SDK / Runtime 依賴版(檔案巨大)](https://github.com/lesvegod/fsx/releases/download/SCD/fsx.exe)
-* [SDK / Runtime 依賴版(檔案輕便)](https://github.com/lesvegod/fsx/releases/download/FDD/fsx.exe)
-
+* [免 SDK / Runtime 依賴版(檔案巨大)](https://github.com/lesvegod/fsx/releases/download/x64_SCD_1.0.6/fsx.exe)
+* [SDK / Runtime 依賴版(檔案輕便)](https://github.com/lesvegod/fsx/releases/download/x64_FDD_1.0.6/fsx.exe)
 
 ---
 ## 使用方式   
@@ -104,12 +103,14 @@ fsx --file, -f <your_script_path&name>
 ### __特別說明__
 本工具腳本支援指令基本參照一般 FTP 指令，但有些指令會有額外的限制或特性，且部分指令屬特殊功能。
 在此特別說明 `guard` 指令。
-`guard` 指令用於設定安全目錄，當設定後，所有影響檔案的指令（如 `put`, `mput`, `dele`, `mdele`, `mkdir`, `rmdir` 等）都會檢查當前工作目錄是否與安全目錄相符。
-若不相符，則會顯示錯誤訊息並中斷指令執行。這樣可以避免在錯誤的目錄下進行檔案操作，降低誤操作風險。
+`guard` 指令用於設定安全目錄，若腳本中使用了 `guard` 指令，則在腳本執行前會先進行安全目錄檢查，若不符則預先中斷腳本執行，進而避免在錯誤的目錄下進行操作，以期降低誤操作風險。
+受 `guard` 指令保護的，皆為可能對實際檔案或目錄結構造成影響的指令（如 `put`, `mput`, `dele`, `mdele`, `mkdir`, `rmdir` 等）。
+
 假設需求為將 `C:\project\output\test.cs` 檔案上傳至 `/folder` 目錄下：
 - 腳本內設定 `guard /folder C:\project\output\`。
 - 設定腳本指令 `lcd C:\project\output\`，切換本地工作目錄至 磁碟機 C: 底下的 project 目錄 -> output 目錄。
 - 設定腳本指令 `cd /other`，切換遠端工作目錄至 other 目錄。
+- (亦可用 `bcd /other C:\project\output\` 指令同時切換遠端與本地工作目錄)
 - 此時若設置指令為 `put test.cs`，由於已經設定了遠端安全目錄，因此會比對遠端安全目錄與遠端工作目錄是否相符，若不符則直接中斷腳本運行。
 - 設置了遠端安全目錄後，若需要變更遠端安全目錄，可再次使用 `guard` 指令來覆蓋原有設定。
 - `unguard` 指令可用來取消遠端／本地安全目錄設定(同時)。
@@ -155,8 +156,6 @@ bye
 |user|-|設定 FTP 帳號資訊，若未設定預設使用 anonymous |`user` test|V1.0.1|
 |pass|-|設定 FTP 密碼資訊，若未設定預設使用 anonymous@example.com|`pass` mypass|V1.0.1|
 |open|✔|依 FTP 設定資訊開始進行連接|`open`|V1.0.1|
-|guard|-|設定遠端／本地安全目錄，若已設定安全目錄，則後續影響檔案的指令，都會檢查遠端／本地當前工作目錄是否與安全目錄設定相符，若需變更安全目錄可直接設定覆蓋|`guard` /folder/test C:\test|V1.0.5|
-|unguard|-|取消遠端／本地安全目錄設定|`unguard`|V1.0.5|
 |ls|-|列出 FTP 工作目錄內容|`ls`|V1.0.1|
 |cd|-|切換 FTP 工作目錄|`cd` folder<br>由當前目錄切換至其內 folder 目錄<br>`cd` ..<br>由當前目錄切換至上層目錄<br>`cd` /folder/test2<br>由當前目錄切換至指定層級目錄 |V1.0.1|
 |put|-|由本地工作目錄上傳指定單一檔案至 FTP 工作目錄，不支援 WildCard|`put` test.dll |V1.0.1|
@@ -167,6 +166,9 @@ bye
 |rmdir|-|移除 FTP 目錄，僅可在目前工作目錄下移除目錄，且支援遞迴，將移除指定目錄中所有檔案與目錄。|`rmdir` output|V1.0.1|
 |lls|-|列出本地工作目錄內容|`lls`|V1.0.1|
 |lcd|-|切換本地工作目錄|`lcd` output<br>由當前目錄切換至其內 output 目錄<br>`cd` ..<br>由當前目錄切換至上層目錄<br>`cd` E:\Stage\output<br>由當前目錄切換至指定層級目錄|V1.0.1|
+|bcd|-|同時切換遠端／本地工作目錄|`bcd` remoteOutput localOutput |V1.0.6|
+|guard|-|設定遠端／本地安全目錄，若已設定安全目錄，則後續影響檔案的指令，都會檢查遠端／本地當前工作目錄是否與安全目錄設定相符，若需變更安全目錄可直接設定覆蓋|`guard` /folder/test C:\test|V1.0.5|
+|unguard|-|取消遠端／本地安全目錄設定|`unguard`|V1.0.5|
 |bye|-|結束腳本操作|`bye`|V1.0.1|
 
 ---
@@ -189,4 +191,7 @@ bye
 ### V1.0.5
   - 修正 `fsx push` 指定未配合 `--mirror` 時，仍會清除遠端冗餘目錄錯誤
   - 取消腳本指令 `lguard`、`lunguard`，合併於 `guard`、`unguard` 指令中同時設定遠端／本地安全目錄
+### V1.0.6
+  - 新增 [ preguard ] 程序，若腳本中有設定 `guard` 指令，則會在腳本執行前先進行安全目錄檢查(包含目錄是否存在)，若不符則預先中斷腳本執行，避免因中途中斷造成資料差異。
+  - 新增腳本指令 `bcd`，同時切換遠端與本地工作目錄
   
