@@ -42,8 +42,8 @@ dotnet tool install -g lesvegod.fsx
 dotnet tool update -g lesvegod.fsx
 ```
 另可於 GitHub 下載最新版本的執行檔，並將其放置於系統 PATH 中的目錄下。
-* [免 SDK / Runtime 依賴版(檔案巨大)](https://github.com/lesvegod/fsx/releases/download/x64_SCD_1.0.6/fsx.exe)
-* [SDK / Runtime 依賴版(檔案輕便)](https://github.com/lesvegod/fsx/releases/download/x64_FDD_1.0.6/fsx.exe)
+* [免 SDK / Runtime 依賴版(檔案巨大)](https://github.com/lesvegod/fsx/releases/download/x64_SCD_1.0.7/fsx.exe)
+* [SDK / Runtime 依賴版(檔案輕便)](https://github.com/lesvegod/fsx/releases/download/x64_FDD_1.0.7/fsx.exe)
 
 ---
 ## 使用方式   
@@ -80,7 +80,8 @@ fsx version, --version, -v
 ### 通用參數
 1. `--passive, -p` :    啟用被動模式 (PASV)，適用於防火牆或 NAT 環境。
 1. `--ssl, -s` :    啟用 FTPS 模式，支援 FTP Secure (FTPS) 連線，需確保 FTP 伺服器支援 FTPS。
-1. `--ssl-implicit` : 使用 Implicit 加密協商模式(需配合 --ssl, -s 使用)，未開啟預設使用 Explicit 模式。
+1. `--ssl-implicit` :  使用 Implicit 加密協商模式(需配合 --ssl, -s 使用)，未開啟預設使用 Explicit 模式。
+1. `--depth, -d` :  設置目錄遞迴層級最大深度，預設為 10 層，設置為 0 為僅限單層。
 1. `--quiet, -q` :   啟用靜默模式，關閉所有運行訊息。
 1. `--log, -l` : 可將執行過程記錄於指定檔案中。
 
@@ -106,11 +107,11 @@ fsx --file, -f <your_script_path&name>
 `guard` 指令用於設定安全目錄，若腳本中使用了 `guard` 指令，則在腳本執行前會先進行安全目錄檢查，若不符則預先中斷腳本執行，進而避免在錯誤的目錄下進行操作，以期降低誤操作風險。
 受 `guard` 指令保護的，皆為可能對實際檔案或目錄結構造成影響的指令（如 `put`, `mput`, `dele`, `mdele`, `mkdir`, `rmdir` 等）。
 
-假設需求為將 `C:\project\output\test.cs` 檔案上傳至 `/folder` 目錄下：
-- 腳本內設定 `guard /folder C:\project\output\`。
+假設需求為將 `C:\project\output\test.cs` 檔案上傳至 `/user/folder` 目錄下：
+- 腳本內設定 `guard /user/folder C:\project\output\`。
 - 設定腳本指令 `lcd C:\project\output\`，切換本地工作目錄至 磁碟機 C: 底下的 project 目錄 -> output 目錄。
-- 設定腳本指令 `cd /other`，切換遠端工作目錄至 other 目錄。
-- (亦可用 `bcd /other C:\project\output\` 指令同時切換遠端與本地工作目錄)
+- 設定腳本指令 `cd /user/other`，切換遠端工作目錄至 other 目錄。
+- (亦可用 `bcd /user/other C:\project\output\` 指令同時切換遠端與本地工作目錄)
 - 此時若設置指令為 `put test.cs`，由於已經設定了遠端安全目錄，因此會比對遠端安全目錄與遠端工作目錄是否相符，若不符則直接中斷腳本運行。
 - 設置了遠端安全目錄後，若需要變更遠端安全目錄，可再次使用 `guard` 指令來覆蓋原有設定。
 - `unguard` 指令可用來取消遠端／本地安全目錄設定(同時)。
@@ -125,11 +126,13 @@ port 9527
 user test
 # 設定 FTP 密碼資訊
 pass myPassword
+# 設定初始預設目錄
+root /user
 # 啟動 FTP 連接
 open
 
-# 設定安全目錄為 遠端 => /folder、本地 => C:\project\output\
-guard /folder C:\project\output\
+# 設定安全目錄為 遠端 => /user/folder、本地 => C:\project\output\
+guard /user/folder C:\project\output\
 # 切換遠端工作目錄至 /folder
 cd /folder
 # 顯示 /folder 目錄下的檔案與目錄
@@ -155,6 +158,7 @@ bye
 |port|-|設定 FTP 連接埠資訊，若未設定預設使用 21| `port` 55688 |V1.0.1|
 |user|-|設定 FTP 帳號資訊，若未設定預設使用 anonymous |`user` test|V1.0.1|
 |pass|-|設定 FTP 密碼資訊，若未設定預設使用 anonymous@example.com|`pass` mypass|V1.0.1|
+|root|-|設定連接初始預設目錄，未設定預設為 / |`root` /user|V1.0.7|
 |open|✔|依 FTP 設定資訊開始進行連接|`open`|V1.0.1|
 |ls|-|列出 FTP 工作目錄內容|`ls`|V1.0.1|
 |cd|-|切換 FTP 工作目錄|`cd` folder<br>由當前目錄切換至其內 folder 目錄<br>`cd` ..<br>由當前目錄切換至上層目錄<br>`cd` /folder/test2<br>由當前目錄切換至指定層級目錄 |V1.0.1|
@@ -192,6 +196,8 @@ bye
   - 修正 `fsx push` 指定未配合 `--mirror` 時，仍會清除遠端冗餘目錄錯誤
   - 取消腳本指令 `lguard`、`lunguard`，合併於 `guard`、`unguard` 指令中同時設定遠端／本地安全目錄
 ### V1.0.6
-  - 新增 [ preguard ] 程序，若腳本中有設定 `guard` 指令，則會在腳本執行前先進行安全目錄檢查(包含目錄是否存在)，若不符則預先中斷腳本執行，避免因中途中斷造成資料差異。
+  - 新增 [ preguard ] 程序，若腳本中有設定 `guard` 指令，則會在腳本執行前先進行安全目錄檢查(包含目錄是否存在)，若不符則預先中斷腳本執行，避免因中途中斷造成資料差異
   - 新增腳本指令 `bcd`，同時切換遠端與本地工作目錄
-  
+### V1.0.7
+  - 新增腳本指令 `root`，設定連接初始預設目錄
+  - 新增 目錄遞迴層級深度參數，`fsx --depth, -d` 或 `fsx push --depth, -d`，未指定預設為 10 層，可是效率與速度調整
