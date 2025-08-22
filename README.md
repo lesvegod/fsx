@@ -42,8 +42,8 @@ dotnet tool install -g lesvegod.fsx
 dotnet tool update -g lesvegod.fsx
 ```
 另可於 GitHub 下載最新版本的執行檔，並將其放置於系統 PATH 中的目錄下。
-* [免 SDK / Runtime 依賴版(檔案巨大)](https://github.com/lesvegod/fsx/releases/download/x64_SCD_1.0.7/fsx.exe)
-* [SDK / Runtime 依賴版(檔案輕便)](https://github.com/lesvegod/fsx/releases/download/x64_FDD_1.0.7/fsx.exe)
+* [免 SDK / Runtime 依賴版(檔案巨大)](https://github.com/lesvegod/fsx/releases/download/x64_SCD_1.0.8/fsx.exe)
+* [SDK / Runtime 依賴版(檔案輕便)](https://github.com/lesvegod/fsx/releases/download/x64_FDD_1.0.8/fsx.exe)
 
 ---
 ## 使用方式   
@@ -104,16 +104,16 @@ fsx --file, -f <your_script_path&name>
 ### __特別說明__
 本工具腳本支援指令基本參照一般 FTP 指令，但有些指令會有額外的限制或特性，且部分指令屬特殊功能。
 在此特別說明 `guard` 指令。
-`guard` 指令用於設定安全目錄，若腳本中使用了 `guard` 指令，則在腳本執行前會先進行安全目錄檢查，若不符則預先中斷腳本執行，進而避免在錯誤的目錄下進行操作，以期降低誤操作風險。
+`guard` 指令用於設定安全目錄，若腳本中使用了 `guard` 指令，則在腳本執行前會先進行安全目錄檢查(PreGuard)，若不符則預先中斷腳本執行，進而避免在錯誤的目錄下進行操作，以期降低誤操作風險。
 受 `guard` 指令保護的，皆為可能對實際檔案或目錄結構造成影響的指令（如 `put`, `mput`, `dele`, `mdele`, `mkdir`, `rmdir` 等）。
 
-假設需求為將 `C:\project\output\test.cs` 檔案上傳至 `/user/folder` 目錄下：
-- 腳本內設定 `guard /user/folder C:\project\output\`。
-- 設定腳本指令 `lcd C:\project\output\`，切換本地工作目錄至 磁碟機 C: 底下的 project 目錄 -> output 目錄。
+假設需求為將 `C:\project\output\folder\test.cs` 檔案上傳至 `/user/folder` 目錄下：
+- 腳本內設定 `guard /user/folder C:\project\output\folder`。
+- 設定腳本指令 `lcd C:\project\output\folder`，切換本地工作目錄至 磁碟機 C: 底下的 project 目錄 -> output 目錄 -> folder 目錄。
 - 設定腳本指令 `cd /user/other`，切換遠端工作目錄至 other 目錄。
-- (亦可用 `bcd /user/other C:\project\output\` 指令同時切換遠端與本地工作目錄)
+- (亦可用 `bcd /user/other C:\project\output\folder` 指令同時切換遠端與本地工作目錄)
 - 此時若設置指令為 `put test.cs`，由於已經設定了遠端安全目錄，因此會比對遠端安全目錄與遠端工作目錄是否相符，若不符則直接中斷腳本運行。
-- 設置了遠端安全目錄後，若需要變更遠端安全目錄，可再次使用 `guard` 指令來覆蓋原有設定。
+- 安全目錄可重複設定。
 - `unguard` 指令可用來取消遠端／本地安全目錄設定(同時)。
 
 以下為腳本範例
@@ -126,24 +126,22 @@ port 9527
 user test
 # 設定 FTP 密碼資訊
 pass myPassword
-# 設定初始預設目錄
-root /user
-# 啟動 FTP 連接
-open
+# 啟動 FTP 連接，同時設定初始遠端／本地工作目錄
+open /user C:\project\output\
 
-# 設定安全目錄為 遠端 => /user/folder、本地 => C:\project\output\
-guard /user/folder C:\project\output\
-# 切換遠端工作目錄至 /folder
-cd /folder
-# 顯示 /folder 目錄下的檔案與目錄
+# 設定安全目錄為 遠端 => /user/folder、本地 => C:\project\output\folder
+guard /user/folder C:\project\output\folder
+# 切換遠端工作目錄至 /user/folder
+cd folder
+# 顯示 /user/folder 目錄下的檔案與目錄
 ls
 
-# 切換本地工作目錄至 C:\project\output
-lcd C:\project\output
+# 切換本地工作目錄至 C:\project\output\folder
+lcd folder
 # 顯示本地工作目錄內容
 lls
 
-# 將 C:\project\output\test.cs 上傳至遠端 /folder 目錄下
+# 將 C:\project\output\folder\test.cs 上傳至遠端 /user/folder 目錄下
 put test.cs
 
 # 結束腳本執行
@@ -158,7 +156,6 @@ bye
 |port|-|設定 FTP 連接埠資訊，若未設定預設使用 21| `port` 55688 |V1.0.1|
 |user|-|設定 FTP 帳號資訊，若未設定預設使用 anonymous |`user` test|V1.0.1|
 |pass|-|設定 FTP 密碼資訊，若未設定預設使用 anonymous@example.com|`pass` mypass|V1.0.1|
-|root|-|設定連接初始預設目錄，未設定預設為 / |`root` /user|V1.0.7|
 |open|✔|依 FTP 設定資訊開始進行連接|`open`|V1.0.1|
 |ls|-|列出 FTP 工作目錄內容|`ls`|V1.0.1|
 |cd|-|切換 FTP 工作目錄|`cd` folder<br>由當前目錄切換至其內 folder 目錄<br>`cd` ..<br>由當前目錄切換至上層目錄<br>`cd` /folder/test2<br>由當前目錄切換至指定層級目錄 |V1.0.1|
@@ -200,4 +197,7 @@ bye
   - 新增腳本指令 `bcd`，同時切換遠端與本地工作目錄
 ### V1.0.7
   - 新增腳本指令 `root`，設定連接初始預設目錄
-  - 新增 目錄遞迴層級深度參數，`fsx --depth, -d` 或 `fsx push --depth, -d`，未指定預設為 10 層，可是效率與速度調整
+  - 新增 目錄遞迴層級深度參數，`fsx --depth, -d` 或 `fsx push --depth, -d`，未指定預設為 10 層，可視效率與速度調整
+### V1.0.8
+  - 移除腳本指令 `root`
+  - 調整 `open` 為必須指定遠端／本地初始工作目錄
